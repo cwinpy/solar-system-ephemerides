@@ -1,0 +1,3 @@
+include solar_system_ephemerides/ephemerides/earth/*.dat.gz
+include solar_system_ephemerides/ephemerides/sun/*.dat.gz
+include solar_system_ephemerides/ephemerides/time/*.dat.gz

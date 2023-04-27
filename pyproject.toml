@@ -1,0 +1,38 @@
+[build-system]
+requires = [
+    "setuptools>=61",
+    "setuptools_scm[toml]>=6.2",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solar_system_ephemerides"
+description = "Solar system ephemeris files"
+authors = [
+    { name = "Matthew Pitkin", email = "matthew.pitkin@ligo.org" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.6, <4"
+dependencies = [
+    "astropy",
+    "jplephem",
+]
+dynamic = [
+    "version",
+]
+
+[project.urls]
+"Source Code" = "https://git.ligo.org/CW/ephemerides/solar-system-ephemerides"
+
+[project.scripts]
+create_solar_system_ephemeris = "solar_system_ephemerides.cli:main"
+
+[tool.setuptools]
+license-files = [ "LICENSE" ]
+include-package-data = true
+
+[tool.setuptools_scm]
+write_to = "solar_system_ephemerides/_version.py"
+
