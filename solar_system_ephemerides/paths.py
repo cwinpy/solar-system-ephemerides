@@ -1,4 +1,6 @@
 import gzip
+import sys
+from argparse import ArgumentParser
 from pathlib import Path
 
 import pkg_resources
@@ -219,3 +221,34 @@ def time_ephemeris_path(units: str, string: bool = False):
     path = TimeEphemerisPath(units=units)
 
     return str(path) if string else path()
+
+
+def cli():
+    """
+    Entry point for command line interface for returning paths.
+    """
+
+    parser = ArgumentParser(
+        description=(
+            "Return the path to an ephemeris file or directory containing "
+            "ephemeris files"
+        ),
+    )
+
+    bodies = ", ".join([f'"{body}"' for body in list(BODIES.keys())[:-1]])
+    bodies += f' or "{list(BODIES.keys())[-1]}"'
+
+    ephems = ", ".join([f'"{ephem}"' for ephem in JPLDE[:-1]])
+    ephems += f' or "{JPLDE[-1]}"'
+
+    parser.add_argument("--body", "-b", default=None, help=f"The solar system body to return the path for. This must be one of {bodies}.")
+    parser.add_argument("--ephem", "-e", default=None, help=f"The JPL development ephemeris version to use. This must be one of {ephems}.")
+
+    args = parser.parse_args()
+
+    if args.body is not None and args.ephem is not None:
+        try:
+            print(ephemeris_path(body=args.body, jplde=args.ephem, string=True))
+            sys.exit(0)
+        except (TypeError, ValueError):
+            sys.exit(1)
