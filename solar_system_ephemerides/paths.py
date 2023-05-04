@@ -276,7 +276,11 @@ def cli():
 
     if args.body is not None:
         for body in args.body:
-            ephemp = args.ephem if args.ephem is not None else ([JPLDE[0]] if args.return_dir else [])
+            ephemp = (
+                args.ephem
+                if args.ephem is not None
+                else ([JPLDE[0]] if args.return_dir else [])
+            )
             for ephem in ephemp:
                 try:
                     paths.append(ephemeris_path(body=body, jplde=ephem))
