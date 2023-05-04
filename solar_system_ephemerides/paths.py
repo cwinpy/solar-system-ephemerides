@@ -215,7 +215,7 @@ def time_ephemeris_path(units: str, string: bool = False):
     units: str
         The time correction file units, either "TDB" or "TCB"
     string: bool
-        If True, return the path as a string rather than a pathlib.Path object. 
+        If True, return the path as a string rather than a pathlib.Path object.
     """
 
     path = TimeEphemerisPath(units=units)
@@ -241,14 +241,61 @@ def cli():
     ephems = ", ".join([f'"{ephem}"' for ephem in JPLDE[:-1]])
     ephems += f' or "{JPLDE[-1]}"'
 
-    parser.add_argument("--body", "-b", default=None, help=f"The solar system body to return the path for. This must be one of {bodies}.")
-    parser.add_argument("--ephem", "-e", default=None, help=f"The JPL development ephemeris version to use. This must be one of {ephems}.")
+    parser.add_argument(
+        "--body",
+        "-b",
+        default=None,
+        nargs="*",
+        help=f"The solar system body[ies] to return the path for. These must be in {bodies}.",
+    )
+    parser.add_argument(
+        "--ephem",
+        "-e",
+        default=None,
+        nargs="*",
+        help=f"The JPL development ephemeris version(s) to use. These must be in {ephems}.",
+    )
+    parser.add_argument(
+        "--units",
+        "-u",
+        default=None,
+        nargs="*",
+        help='The time system units to return the path for. This must be "TCB" or "TDB".',
+    )
+    parser.add_argument(
+        "--return-dir",
+        "-d",
+        action="store_true",
+        default=False,
+        help="Return the ephemeris directory for a given body/time system unit rather than the file path.",
+    )
 
     args = parser.parse_args()
 
-    if args.body is not None and args.ephem is not None:
-        try:
-            print(ephemeris_path(body=args.body, jplde=args.ephem, string=True))
-            sys.exit(0)
-        except (TypeError, ValueError):
-            sys.exit(1)
+    paths = []
+
+    if args.body is not None:
+        for body in args.body:
+            ephemp = args.ephem if args.ephem is not None else ([JPLDE[0]] if args.return_dir else [])
+            for ephem in ephemp:
+                try:
+                    paths.append(ephemeris_path(body=body, jplde=ephem))
+                except (TypeError, ValueError):
+                    sys.exit(1)
+
+    if args.units is not None:
+        for unit in args.units:
+            try:
+                paths.append(time_ephemeris_path(units=unit))
+            except (TypeError, ValueError):
+                sys.exit(1)
+
+    if len(paths):
+        if args.return_dir:
+            print(*list(set([str(path.parent) for path in paths])), sep=":")
+        else:
+            print(*[str(path) for path in paths], sep=":")
+
+        sys.exit(0)
+    else:
+        sys.exit(1)
