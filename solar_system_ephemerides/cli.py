@@ -2,7 +2,7 @@ import datetime
 import os
 import sys
 import argparse
-
+from typing import Union
 
 from astropy.coordinates import get_body_barycentric_posvel, solar_system_ephemeris
 from astropy.time import Time, TimeDelta
@@ -75,11 +75,13 @@ BODIES = [
 ]
 
 
-def main():
+def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-e",
         "--ephemeris",
+        "--jplde",
+        "--ephem",
         dest="ephemeris",
         required=True,
         help="Set the ephemeris to use (e.g. DE405)",
@@ -95,7 +97,7 @@ def main():
         "-g",
         "--gps-start",
         dest="gpsstart",
-        type=float,
+        type=int,
         default=None,
         help="Set the GPS time at which to start generating the ephemeris",
     )
@@ -103,7 +105,7 @@ def main():
         "-y",
         "--year-start",
         dest="yearstart",
-        type=float,
+        type=int,
         default=None,
         help="Set the (decimal) year at which to start generating the ephemeris",
     )
@@ -126,6 +128,7 @@ def main():
     parser.add_argument(
         "-t",
         "--target",
+        "--body",
         dest="target",
         required=True,
         help="Set the solar system body to generate the ephemeris for",
@@ -133,32 +136,51 @@ def main():
 
     args = parser.parse_args()
 
+    generate_ephemeris(
+        body=args.target,
+        jplde=args.ephemeris,
+        nyears=args.nyears,
+        interval=args.interval,
+        gpsstart=args.gpsstart,
+        yearstart=args.yearstart,
+        output=args.output,
+        cli=True,
+    )
+
+
+def generate_ephemeris(
+    body: str = None,
+    jplde: str = None,
+    nyears: Union[int, float] = None,
+    interval: Union[int, float] = None,
+    gpsstart: int = None,
+    yearstart: int = None,
+    output: str = None,
+    cli: bool = False,
+):
+    if jplde is None:
+        raise ValueError("JPL development version must be given.")
+
     # check ephemeris is either a filename, or in our current list
-    if args.ephemeris.endswith(".bsp"):
-        ephemfile = args.ephemeris
+    if jplde.endswith(".bsp"):
+        ephemfile = jplde
     else:
-        if args.ephemeris.upper() not in EPH_URLS.keys():
-            print(
-                "Ephemeris '{}' is not allowed, use one of: {}".format(
-                    args.ephemeris, EPH_URLS.keys()
-                )
+        if jplde.upper() not in EPH_URLS.keys():
+            raise ValueError(
+                f"Ephemeris '{jplde}' is not allowed, use one of: {EPH_URLS.keys()}."
             )
-            sys.exit(1)
         else:
-            ephemfile = EPH_URLS[args.ephemeris.upper()]
+            ephemfile = EPH_URLS[jplde.upper()]
 
     # check that the body is in our current list
-    if args.target.lower() not in BODIES:
-        print(
-            "Target body '{}' is not in the allowed list: {}".format(
-                args.target, BODIES
-            )
+    if body.lower() not in BODIES:
+        raise ValueError(
+            f"Target body '{body}' is not in the allowed list: {BODIES}."
         )
-        sys.exit(1)
     else:
         body = (
-            args.target.lower()
-            if args.target.lower() != "earth-moon-barycentre"
+            body.lower()
+            if body.lower() != "earth-moon-barycentre"
             else "earth-moon-barycenter"
         )
 
@@ -166,34 +188,33 @@ def main():
     solar_system_ephemeris.set(ephemfile)
 
     # set the start time
-    if args.gpsstart is not None and args.yearstart is not None:
-        print("Specify either '--gps-start' or '--year-start', but not both")
-        sys.exit(1)
-    elif args.gpsstart is not None:
+    if gpsstart is not None and yearstart is not None:
+        raise ValueError("Specify either '--gps-start' or '--year-start', but not both")
+    elif gpsstart is not None:
         try:
-            starttime = Time(args.gpsstart, format="gps", scale="utc")
-        except ValueError:
-            Exception("Could not parse start GPS time: {}".format(args.gpsstart))
+            starttime = Time(gpsstart, format="gps", scale="utc")
+        except Exception as e:
+            ValueError(f"Could not parse start GPS time {gpsstart}: {e}")
     else:
         try:
-            starttime = Time(args.yearstart, format="decimalyear", scale="utc")
-        except ValueError:
-            Exception("Could not parse start year: {}".format(args.yearstart))
+            starttime = Time(yearstart, format="decimalyear", scale="utc")
+        except Exception as e:
+            ValueError(f"Could not parse start year {yearstart}: {e}")
 
     # set the time step
     try:
-        dt = TimeDelta(args.interval * 3600.0, format="sec")
-    except ValueError:
-        Exception("Could not parse time interval: {}".format(args.interval))
+        dt = TimeDelta(interval * 3600.0, format="sec")
+    except Exception as e:
+        ValueError(f"Could not parse time interval {interval}: {e}")
 
     # set the end time
     try:
         endtime = (
-            Time(starttime.decimalyear + args.nyears, format="decimalyear", scale="utc")
+            Time(starttime.decimalyear + nyears, format="decimalyear", scale="utc")
             + dt
         )
-    except ValueError:
-        Exception("Could not parse total timespan")
+    except Exception as e:
+        ValueError(f"Could not parse total timespan {nyears}: {e}")
 
     pos = []
     vel = []
@@ -221,15 +242,15 @@ def main():
 
     # set output header
     headdic = {}
-    headdic["exec"] = os.path.basename(sys.argv[0])
+    headdic["exec"] = os.path.basename(sys.argv[0]) if cli else "N/A"
     headdic["author"] = __author__
     headdic["date"] = __date__
     headdic["version"] = __version__
-    headdic["command"] = " ".join([os.path.basename(sys.argv[0])] + sys.argv[1:])
-    headdic["ephem"] = args.ephemeris.upper()
+    headdic["command"] = " ".join([os.path.basename(sys.argv[0])] + sys.argv[1:]) if cli else "N/A"
+    headdic["ephem"] = jplde.upper()
     headdic["ephemurl"] = ephemfile
 
-    outfile = args.output
+    outfile = output
     if outfile is None:
         fp = sys.stdout
     else:
