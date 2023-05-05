@@ -8,7 +8,7 @@ from astropy.coordinates import get_body_barycentric_posvel, solar_system_epheme
 from astropy.time import Time, TimeDelta
 from astropy import constants as const
 
-from . import __version__
+from ._version import __version__
 
 try:
     __author__ = os.environ["USER"]
