@@ -39,10 +39,13 @@ TIMECORRS = {
 
 
 class EphemerisPath:
-    def __init__(self, body: str, jplde: str, timespan: str = "00-40"):
+    def __init__(
+        self, body: str, jplde: str, timespan: str = "00-40", relative_path: str = None
+    ):
         self.body = body
         self.jplde = jplde
         self.timespan = timespan
+        self.relative_path = relative_path
 
     @property
     def body(self):
@@ -106,6 +109,22 @@ class EphemerisPath:
             raise ValueError(f"time span must be in {TIMESPANS}")
 
     @property
+    def relative_path(self):
+        return self._relative_path
+
+    @relative_path.setter
+    def relative_path(self, relpath):
+        if relpath is None:
+            self._relative_path = None
+        else:
+            relpath = Path(relpath)
+
+            if not relpath.is_dir():
+                raise ValueError(f"Relative path '{str(relpath)}' does not exists")
+            else:
+                self._relative_path = relpath
+
+    @property
     def path(self):
         """
         Construct the path. Return a pathlib.Path object.
@@ -117,10 +136,16 @@ class EphemerisPath:
         return path
 
     def __call__(self):
-        return self.path
+        if self.relative_path is None:
+            return self.path
+        else:
+            return self.path.relative_to(self.relative_path)
 
     def __str__(self):
-        return str(self.path)
+        if self.relative_path is None:
+            return str(self.path)
+        else:
+            return str(self.path.relative_to(self.relative_path))
 
     @property
     def contents(self):
@@ -135,8 +160,9 @@ class EphemerisPath:
 
 
 class TimeEphemerisPath:
-    def __init__(self, units: str):
+    def __init__(self, units: str, relative_path: str = None):
         self.units = units
+        self.relative_path = relative_path
 
     @property
     def units(self):
@@ -165,11 +191,33 @@ class TimeEphemerisPath:
 
         return path
 
+    @property
+    def relative_path(self):
+        return self._relative_path
+
+    @relative_path.setter
+    def relative_path(self, relpath):
+        if relpath is None:
+            self._relative_path = None
+        else:
+            relpath = Path(relpath)
+
+            if not relpath.is_dir():
+                raise ValueError(f"Relative path '{str(relpath)}' does not exists")
+            else:
+                self._relative_path = relpath
+
     def __call__(self):
-        return self.path
+        if self.relative_path is None:
+            return self.path
+        else:
+            return self.path.relative_to(self.relative_path)
 
     def __str__(self):
-        return str(self.path)
+        if self.relative_path is None:
+            return str(self.path)
+        else:
+            return str(self.path.relative_to(self.relative_path))
 
     @property
     def contents(self):
@@ -184,7 +232,11 @@ class TimeEphemerisPath:
 
 
 def ephemeris_path(
-    body: str, jplde: str = "DE405", timespan: str = "00-40", string: bool = False
+    body: str,
+    jplde: str = "DE405",
+    timespan: str = "00-40",
+    relative_path: str = None,
+    string: bool = False,
 ) -> str:
     """
     Function for returning an ephemeris file path.
@@ -197,16 +249,20 @@ def ephemeris_path(
         The JPL development ephemeris version, e.g., "DE405".
     timespan: str
         The ephemeris timespan. Currently only 00-40 is included, so this is the default value.
+    relative_path: str
+        Return paths relative to this path.
     string: bool
         If True, return the path as a string rather than a pathlib.Path object.
     """
 
-    path = EphemerisPath(body=body, jplde=jplde, timespan=timespan)
+    path = EphemerisPath(
+        body=body, jplde=jplde, timespan=timespan, relative_path=relative_path
+    )
 
     return str(path) if string else path()
 
 
-def time_ephemeris_path(units: str, string: bool = False):
+def time_ephemeris_path(units: str, relative_path: str = None, string: bool = False):
     """
     Function for returning a time correction ephemeris file path.
 
@@ -214,11 +270,13 @@ def time_ephemeris_path(units: str, string: bool = False):
     ----------
     units: str
         The time correction file units, either "TDB" or "TCB"
+    relative_path: str
+        Return paths relative to this path.
     string: bool
         If True, return the path as a string rather than a pathlib.Path object.
     """
 
-    path = TimeEphemerisPath(units=units)
+    path = TimeEphemerisPath(units=units, relative_path=relative_path)
 
     return str(path) if string else path()
 
@@ -269,6 +327,12 @@ def cli():
         default=False,
         help="Return the ephemeris directory for a given body/time system unit rather than the file path.",
     )
+    parser.add_argument(
+        "--rel-path",
+        "-r",
+        default=None,
+        help="Return paths relative to this given path.",
+    )
 
     args = parser.parse_args()
 
@@ -283,14 +347,20 @@ def cli():
             )
             for ephem in ephemp:
                 try:
-                    paths.append(ephemeris_path(body=body, jplde=ephem))
+                    paths.append(
+                        ephemeris_path(
+                            body=body, jplde=ephem, relative_path=args.rel_path
+                        )
+                    )
                 except (TypeError, ValueError):
                     sys.exit(1)
 
     if args.units is not None:
         for unit in args.units:
             try:
-                paths.append(time_ephemeris_path(units=unit))
+                paths.append(
+                    time_ephemeris_path(units=unit, relative_path=args.rel_path)
+                )
             except (TypeError, ValueError):
                 sys.exit(1)
 
