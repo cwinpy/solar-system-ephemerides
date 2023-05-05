@@ -158,6 +158,30 @@ def generate_ephemeris(
     output: str = None,
     cli: bool = False,
 ):
+    """
+    Generate an ephemeris for a given solar system body.
+
+    Parameters
+    ----------
+    body: str
+        The solar system body for which to generate the ephemeris, e.g.,
+        "earth".
+    jplde: str
+        The JPL development ephemeris version to use, e.g., "DE405".
+    nyears: int, float
+        The number of years over which to generate the ephemeris.
+    interval: int, float
+        The time step (in hours) between successive ephemeris values.
+    gpsstart: int
+        The start time for the ephemeris in GPS seconds.
+    yearstart: int
+        The start time for the ephemeris as a calendar year value.
+    output: str
+        The path to a file into which to output the ephemeris. If this ends
+        with ".gz" the file will be gzipped. If not given, the ephemeris will
+        be output to stdout. 
+    """
+
     if jplde is None:
         raise ValueError("JPL development version must be given.")
 
