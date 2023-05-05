@@ -27,7 +27,7 @@ dynamic = [
 "Source Code" = "https://git.ligo.org/CW/ephemerides/solar-system-ephemerides"
 
 [project.scripts]
-create_solar_system_ephemeris = "solar_system_ephemerides.cli:main"
+create_solar_system_ephemeris = "solar_system_ephemerides.generate:cli"
 ephemeris_path = "solar_system_ephemerides.paths:cli"
 
 [tool.setuptools]
