@@ -1,3 +1,4 @@
+from .generate import generate_ephemeris
 from .paths import *
 
 try:
