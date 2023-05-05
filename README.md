@@ -28,9 +28,9 @@ Once installed, to get the path to an ephemeris file, e.g., the DE405 file for E
 you can do:
 
 ```python
-from solar_system_ephemerides import ephemeris_path
+from solar_system_ephemerides import body_ephemeris_path
 
-path = ephemeris_path("earth", DE405)
+path = body_ephemeris_path("earth", DE405)
 ```
 
 ## Ephemeris generation
