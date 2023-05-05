@@ -28,6 +28,7 @@ dynamic = [
 
 [project.scripts]
 create_solar_system_ephemeris = "solar_system_ephemerides.generate:cli"
+ephemeris_path = "solar_system_ephemerides.paths:cli"
 
 [tool.setuptools]
 license-files = [ "LICENSE" ]
