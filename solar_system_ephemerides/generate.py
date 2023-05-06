@@ -9,6 +9,7 @@ from astropy.time import Time, TimeDelta
 from astropy import constants as const
 
 from ._version import __version__
+from .ephemeris import BodyEphemeris
 
 try:
     __author__ = os.environ["USER"]
@@ -156,6 +157,7 @@ def generate_ephemeris(
     gpsstart: int = None,
     yearstart: int = None,
     output: str = None,
+    bodyephemeris: bool = False,
     cli: bool = False,
 ):
     """
@@ -180,6 +182,8 @@ def generate_ephemeris(
         The path to a file into which to output the ephemeris. If this ends
         with ".gz" the file will be gzipped. If not given, the ephemeris will
         be output to stdout. 
+    bodyephemeris: bool
+        If True, return a BodyEphemeris object containing the data.
     """
 
     if jplde is None:
@@ -276,7 +280,7 @@ def generate_ephemeris(
 
     outfile = output
     if outfile is None:
-        fp = sys.stdout
+        fp = sys.stdout if not bodyephemeris else None
     else:
         # gzip if extension ends with '.gz'
         if outfile[-3:] == ".gz":
@@ -292,31 +296,46 @@ def generate_ephemeris(
             except IOError:
                 Exception("Problem opening output file '{}'".format(outfile))
 
-    # write out header
-    fp.write(HEADER.format(**headdic))
+    if fp is not None:
+        # write out header
+        fp.write(HEADER.format(**headdic))
 
-    # write out start time (GPS), time interval (secs), number of entries
-    fp.write("{}\t{}\t{}\n".format(int(starttime.gps), dt, len(pos)))
+        # write out start time (GPS), time interval (secs), number of entries
+        fp.write("{}\t{}\t{}\n".format(int(starttime.gps), dt, len(pos)))
 
-    curtime = starttime
-    for tpos, tvel, tacc in zip(pos, vel, acc):
-        fp.write("{0:.6f}\t".format(curtime.gps))
-        fp.write(
-            "{0:.16e}\t{1:.16e}\t{2:.16e}\t".format(
-                tpos[0].value, tpos[1].value, tpos[2].value
+        curtime = starttime
+        for tpos, tvel, tacc in zip(pos, vel, acc):
+            fp.write("{0:.6f}\t".format(curtime.gps))
+            fp.write(
+                "{0:.16e}\t{1:.16e}\t{2:.16e}\t".format(
+                    tpos[0].value, tpos[1].value, tpos[2].value
+                )
             )
-        )
-        fp.write(
-            "{0:.16e}\t{1:.16e}\t{2:.16e}\t".format(
-                tvel[0].value, tvel[1].value, tvel[2].value
+            fp.write(
+                "{0:.16e}\t{1:.16e}\t{2:.16e}\t".format(
+                    tvel[0].value, tvel[1].value, tvel[2].value
+                )
             )
-        )
-        fp.write(
-            "{0:.16e}\t{1:.16e}\t{2:.16e}\n".format(
-                tacc[0].value, tacc[1].value, tacc[2].value
+            fp.write(
+                "{0:.16e}\t{1:.16e}\t{2:.16e}\n".format(
+                    tacc[0].value, tacc[1].value, tacc[2].value
+                )
             )
-        )
-        curtime += dt
+            curtime += dt
 
-    if outfile is not None:
-        fp.close()
+        if outfile is not None:
+            fp.close()
+
+    if bodyephemeris:
+        # store and return as BodyEphemeris object
+        be = BodyEphemeris()
+        be.pos = [tpos.value for tpos in pos]
+        be.vel = [tvel.value for tvel in vel]
+        be.acc = [tacc.value for tacc in acc]
+
+        be.body = body
+        be.t0 = curtime.gps
+        be.timestep = dt.value
+        be.nentries = len(pos)
+
+        return be
