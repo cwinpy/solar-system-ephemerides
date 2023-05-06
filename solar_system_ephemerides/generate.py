@@ -181,7 +181,7 @@ def generate_ephemeris(
     output: str
         The path to a file into which to output the ephemeris. If this ends
         with ".gz" the file will be gzipped. If not given, the ephemeris will
-        be output to stdout. 
+        be output to stdout.
     bodyephemeris: bool
         If True, return a BodyEphemeris object containing the data.
     """
@@ -202,9 +202,7 @@ def generate_ephemeris(
 
     # check that the body is in our current list
     if body.lower() not in BODIES:
-        raise ValueError(
-            f"Target body '{body}' is not in the allowed list: {BODIES}."
-        )
+        raise ValueError(f"Target body '{body}' is not in the allowed list: {BODIES}.")
     else:
         body = (
             body.lower()
@@ -238,8 +236,7 @@ def generate_ephemeris(
     # set the end time
     try:
         endtime = (
-            Time(starttime.decimalyear + nyears, format="decimalyear", scale="utc")
-            + dt
+            Time(starttime.decimalyear + nyears, format="decimalyear", scale="utc") + dt
         )
     except Exception as e:
         ValueError(f"Could not parse total timespan {nyears}: {e}")
@@ -274,7 +271,9 @@ def generate_ephemeris(
     headdic["author"] = __author__
     headdic["date"] = __date__
     headdic["version"] = __version__
-    headdic["command"] = " ".join([os.path.basename(sys.argv[0])] + sys.argv[1:]) if cli else "N/A"
+    headdic["command"] = (
+        " ".join([os.path.basename(sys.argv[0])] + sys.argv[1:]) if cli else "N/A"
+    )
     headdic["ephem"] = jplde.upper()
     headdic["ephemurl"] = ephemfile
 
