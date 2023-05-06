@@ -1,6 +1,9 @@
 import numpy as np
 from gzip import open as gzopen
 
+from astropy import constants
+from astropy import units as u
+
 from .paths import body_ephemeris_path, time_ephemeris_path
 
 
@@ -62,64 +65,242 @@ class BodyEphemeris:
         self.timestep = data[1, 0] - self.t0  # time step (s)
         self.nentries = data.shape[0]  # number of entries
 
-        self.pos = data[:, 1:4]
-        self.vel = data[:, 4:7]
-        self.acc = data[:, 7:10]
+        self.pos = data[:, 1:4]  # position in lt/s
+        self.vel = data[:, 4:7]  # velocity n lt/s
+        self.acc = data[:, 7:10]  # acceleration in lt/s^2
 
     @property
     def pos(self):
-        return self._pos
+        # position in lt/s
+        return self.get_pos()
 
     @pos.setter
     def pos(self, pos):
         self._pos = np.asarray(pos, dtype=float)
 
-        if self.pos.shape[-1] != 3:
+        if self._pos.shape[-1] != 3:
             raise ValueError("Position must contain x, y and z components")
+
+    def get_pos(
+        self, coords: str = "xyz", si: bool = False, astropyunits: bool = False
+    ):
+        """
+        Return a numpy array with the position at each time step. By
+        default, these will be in light seconds.
+
+        Parameters
+        ----------
+        coords: str
+            The coordinate(s) to return. Default is "xyz", i.e., the 3D
+            position.
+        si: bool
+            Return the position in metres rather than light seconds. Default is
+            False.
+        astropyunits: bool
+            Return the array as an astropy Quantity with the associated units.
+            Default is False.
+        """
+
+        try:
+            self._pos
+        except AttributeError:
+            return None
+
+        xyz = {"x": 0, "y": 1, "z": 2}
+        if not (set("xyz") & set(coords)):
+            raise ValueError("Coordinates must contain 'x', 'y', and/or 'z'")
+
+        sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
+        if not si:
+            return self._pos[:, sl] * u.lsec if astropyunits else self._pos[:, sl]
+        else:
+            return (
+                self._pos[:, sl] * u.s * constants.c
+                if astropyunits
+                else self._pos[:, sl] * constants.c.value
+            )
+
+    @property
+    def pos_si(self):
+        # return position in metres
+        return self.get_pos(si=True) if self.pos is not None else None
+
+    @property
+    def pos_x(self):
+        # return x position
+        return self.get_pos(coords="x")
+
+    @property
+    def pos_y(self):
+        # return y position
+        return self.get_pos(coords="y")
+
+    @property
+    def pos_z(self):
+        # return z position
+        return self.get_pos(coords="z")
 
     @property
     def vel(self):
-        return self._vel
+        return self.get_vel()
 
     @vel.setter
     def vel(self, vel):
         self._vel = np.asarray(vel, dtype=float)
 
-        if self.vel.shape[-1] != 3:
+        if self._vel.shape[-1] != 3:
             raise ValueError("Velocity must contain x, y and z components")
+
+    def get_vel(
+        self, coords: str = "xyz", si: bool = False, astropyunits: bool = False
+    ):
+        """
+        Return a numpy array with the velocity at each time step. By
+        default, these will be in light seconds/second.
+
+        Parameters
+        ----------
+        coords: str
+            The coordinate(s) to return. Default is "xyz", i.e., the 3D
+            velocity.
+        si: bool
+            Return the velocity in metres/s rather than light seconds/s.
+            Default is False.
+        astropyunits: bool
+            Return the array as an astropy Quantity with the associated units.
+            Default is False.
+        """
+
+        try:
+            self._vel
+        except AttributeError:
+            return None
+
+        xyz = {"x": 0, "y": 1, "z": 2}
+        if not (set("xyz") & set(coords)):
+            raise ValueError("Coordinates must contain 'x', 'y', and/or 'z'")
+
+        sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
+        if not si:
+            return self._vel[:, sl] * u.lsec / u.s if astropyunits else self._vel[:, sl]
+        else:
+            return (
+                self._vel[:, sl] * constants.c
+                if astropyunits
+                else self._vel[:, sl] * constants.c.value
+            )
+
+    @property
+    def vel_si(self):
+        # return velocity in metres/s
+        return self.get_vel(si=True)
+
+    @property
+    def vel_x(self):
+        # return x velocity
+        return self.get_vel(coords="x")
+
+    @property
+    def vel_y(self):
+        # return y velocity
+        return self.get_vel(coords="y")
+
+    @property
+    def vel_z(self):
+        # return z velocity
+        return self.get_vel(coords="z")
 
     @property
     def acc(self):
-        return self._acc
+        return self.get_acc()
 
     @acc.setter
     def acc(self, acc):
         self._acc = np.asarray(acc, dtype=float)
 
-        if self.acc.shape[-1] != 3:
+        if self._acc.shape[-1] != 3:
             raise ValueError("Acceleration must contain x, y and z components")
+
+    def get_acc(
+        self, coords: str = "xyz", si: bool = False, astropyunits: bool = False
+    ):
+        """
+        Return a numpy array with the acceleration at each time step. By
+        default, these will be in light seconds/second.
+
+        Parameters
+        ----------
+        coords: str
+            The coordinate(s) to return. Default is "xyz", i.e., the 3D
+            acceleration.
+        si: bool
+            Return the acceleration in metres/s^2 rather than light
+            seconds/s^2. Default is False.
+        astropyunits: bool
+            Return the array as an astropy Quantity with the associated units.
+            Default is False.
+        """
+
+        try:
+            self._acc
+        except AttributeError:
+            return None
+
+        xyz = {"x": 0, "y": 1, "z": 2}
+        if not (set("xyz") & set(coords)):
+            raise ValueError("Coordinates must contain 'x', 'y', and/or 'z'")
+
+        sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
+        if not si:
+            return (
+                self._acc[:, sl] * u.lsec / u.s**2
+                if astropyunits
+                else self._acc[:, sl]
+            )
+        else:
+            return (
+                self._acc[:, sl] * constants.c / u.s
+                if astropyunits
+                else self._acc[:, sl] * constants.c.value
+            )
+
+    @property
+    def acc_si(self):
+        # return acceleration in metres/s^2
+        return self.get_acc(si=True)
+
+    @property
+    def acc_x(self):
+        # return x acceleration
+        return self.get_acc(coords="x")
+
+    @property
+    def acc_y(self):
+        # return y acceleration
+        return self.get_acc(coords="y")
+
+    @property
+    def acc_z(self):
+        # return z acceleration
+        return self.get_acc(coords="z")
 
     @property
     def times(self):
-        if (
-            hasattr(self, "t0")
-            and hasattr(self, "timestep")
-            and hasattr(self, "nentries")
-        ):
+        try:
             return np.arange(
                 self.t0, self.t0 + self.timestep * self.nentries, self.nentries
             )
-        else:
+        except AttributeError:
             return None
 
     def __len__(self):
-        if hasattr(self, "nentries"):
+        try:
             return self.nentries
-        else:
+        except AttributeError:
             return 0
 
 
-def lal_ephemeris_data(jplde: str = "DE405"):
+def lal_ephemeris_data(jplde: str = "DE405", timespan="00-40"):
     """
     Return a LAL EphemerisData object containing the ephemerides for the Earth
     and Sun.
@@ -127,15 +308,44 @@ def lal_ephemeris_data(jplde: str = "DE405"):
     Parameters
     ----------
     jplde: str
-        The JPL development ephemeris version.
+        The JPL development ephemeris version. Default is DE405.
+    timespan: str
+        The timespan of the ephemeris. This defaults to "00-40", which is
+        currently the only time span available within this package.
     """
 
     try:
         import lalpulsar
     except ImportError:
-        raise ImportError("You must have lalsuite/lalpulsar installed to use this function")
-    
-    earth = body_ephemeris_path(body="earth", jplde=jplde, string=True)
-    sun = body_ephemeris_path(body="sun", jplde=jplde, string=True)
+        raise ImportError(
+            "You must have lalsuite/lalpulsar installed to use this function"
+        )
+
+    earth = body_ephemeris_path(
+        body="earth", jplde=jplde, timespan=timespan, string=True
+    )
+    sun = body_ephemeris_path(body="sun", jplde=jplde, timespan=timespan, string=True)
 
     return lalpulsar.InitBarycenter(earth, sun)
+
+
+def lal_time_ephemeris_data(units: str = "TCB"):
+    """
+    Return a LAL TimeCorrectionData object contain the time correction data.
+
+    Parameters
+    ----------
+    units: str
+        The time system, either TCB (the default) or TDB.
+    """
+
+    try:
+        import lalpulsar
+    except ImportError:
+        raise ImportError(
+            "You must have lalsuite/lalpulsar installed to use this function"
+        )
+
+    time = time_ephemeris_path(units=units, string=True)
+
+    return lalpulsar.InitTimeCorrections(time)
