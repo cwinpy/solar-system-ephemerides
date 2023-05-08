@@ -293,6 +293,68 @@ class BodyEphemeris:
         except AttributeError:
             return None
 
+    def write(self, outfile, header=None):
+        """
+        Write the ephemeris out to a file. If the file extension is ".txt" or
+        ".dat" this will be output to a plain ascii file. If it ends with ".gz"
+        then file will be gzipped.
+
+        Parameters
+        ----------
+        outfile: str
+            The path to the output file.
+        header: str
+            A string to output at the header in the file. Each line in this
+            should start with a "#" to denote a comment line.
+        """
+
+        if outfile.endswith(".hdf5"):
+            raise NotImplementedError("Output to HDF5 files is not yet implemented.")
+
+        # gzip if extension ends with '.gz'
+        if outfile.endswith(".gz"):
+            try:
+                import gzip
+
+                fp = gzip.open(outfile, "wb")
+            except IOError:
+                Exception("Problem opening gzip output file '{}'".format(outfile))
+        else:
+            try:
+                fp = open(outfile, "w")
+            except IOError:
+                Exception("Problem opening output file '{}'".format(outfile))
+
+        try:
+            _ = self.t0
+            _ = self.pos
+        except AttributeError:
+            raise RuntimeError("Cannot write ephemeris as it has not been filled in yet.")
+
+        # write out header
+        fp.write(header + ("\n" if not header.endswith("\n") else ""))
+
+        # write out start time (GPS), time interval (secs), number of entries
+        fp.write(f"{int(self.t0)}\t{self.timestep}\t{len(self)}\n")
+
+        times = self.times
+        pos = self.pos
+        vel = self.vel
+        acc = self.acc
+        for i in range(len(self)):
+            fp.write(f"{times[i]:.6f}\t")
+            fp.write(
+                f"{pos[i, 0]:.16e}\t{pos[i, 1]:.16e}\t{pos[i, 2]:.16e}\t"
+            )
+            fp.write(
+                f"{vel[i, 0]:.16e}\t{vel[i, 1]:.16e}\t{vel[i, 2]:.16e}\t"
+            )
+            fp.write(
+                f"{acc[i, 0]:.16e}\t{acc[i, 1]:.16e}\t{acc[i, 2]:.16e}\n"
+            )
+
+        fp.close()
+
     def __len__(self):
         try:
             return self.nentries
