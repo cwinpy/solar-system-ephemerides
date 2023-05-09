@@ -1,5 +1,6 @@
 import numpy as np
 from gzip import open as gzopen
+from pathlib import Path
 from typing import Union
 
 from astropy import constants
@@ -303,7 +304,7 @@ class BodyEphemeris:
         except AttributeError:
             return None
 
-    def write(self, outfile, header=None):
+    def write(self, outfile: Union[str, Path], header: str = None, overwrite: bool = False):
         """
         Write the ephemeris out to a file. If the file extension is ".txt" or
         ".dat" this will be output to a plain ascii file. If it ends with ".gz"
@@ -316,13 +317,21 @@ class BodyEphemeris:
         header: str
             A string to output at the header in the file. Each line in this
             should start with a "#" to denote a comment line.
+        overwrite: bool
+            Set whether to overwrite an existing file or not. Default is False.
         """
 
-        if outfile.endswith(".hdf5"):
+        outfile = Path(outfile)
+
+        if outfile.suffix == ".hdf5":
             raise NotImplementedError("Output to HDF5 files is not yet implemented.")
 
+        if outfile.is_file() and not overwrite:
+            print(f"File '{outfile}' already exists. Set 'overwrite=True' to overwrite it.")
+            return
+
         # gzip if extension ends with '.gz'
-        if outfile.endswith(".gz"):
+        if outfile.suffix == ".gz":
             try:
                 import gzip
 

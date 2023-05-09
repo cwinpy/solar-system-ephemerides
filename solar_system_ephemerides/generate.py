@@ -146,6 +146,7 @@ def cli():
         yearstart=args.yearstart,
         output=args.output,
         cli=True,
+        overwrite=True,
     )
 
 
@@ -157,6 +158,7 @@ def generate_ephemeris(
     gpsstart: int = None,
     yearstart: int = None,
     output: str = None,
+    overwrite: bool = False,
     cli: bool = False,
 ) -> BodyEphemeris:
     """
@@ -181,6 +183,9 @@ def generate_ephemeris(
     output: str
         The path to a file into which to output the ephemeris. If this ends
         with ".gz" the file will be gzipped.
+    overwrite: bool
+        If outputting to a file, set whether to overwrite an existing file or
+        not. Default is False.
     """
 
     if jplde is None:
@@ -286,6 +291,6 @@ def generate_ephemeris(
         headdic["ephem"] = jplde.upper()
         headdic["ephemurl"] = ephemfile
 
-        be.write(output, header=HEADER.format(**headdic))
+        be.write(output, header=HEADER.format(**headdic), overwrite=overwrite)
 
     return be
