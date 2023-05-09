@@ -41,10 +41,12 @@ HEADER = """\
 
 # set locations of JPL ephemeris files for downloading
 EPH_URLS = {
+    "DE440": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp",
+    "DE438": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de438.bsp",
     "DE436": "ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de436.bsp",
     "DE435": "ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de435.bsp",
     "DE432S": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp",
-    "DE430": "http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp",
+    "DE430": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp",
     "DE421": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de421.bsp",
     "DE414": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de414.bsp",
     "DE410": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de410.bsp",
@@ -91,8 +93,8 @@ def cli():
         "-o",
         "--output-file",
         dest="output",
-        default=None,
-        help="Set the output file (defaults to stdout)",
+        required=True,
+        help="Set the output file. If this ends in '.gz' it will be gzipped.",
     )
     parser.add_argument(
         "-g",
