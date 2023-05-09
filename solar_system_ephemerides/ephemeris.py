@@ -333,9 +333,7 @@ class BodyEphemeris:
         # gzip if extension ends with '.gz'
         if outfile.suffix == ".gz":
             try:
-                import gzip
-
-                fp = gzip.open(outfile, "wb")
+                fp = gzopen(outfile, "wt")
             except IOError:
                 Exception("Problem opening gzip output file '{}'".format(outfile))
         else:
