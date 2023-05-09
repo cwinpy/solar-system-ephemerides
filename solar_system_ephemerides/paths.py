@@ -38,7 +38,7 @@ TIMECORRS = {
 }
 
 
-class EphemerisPath:
+class BodyEphemerisPath:
     def __init__(
         self, body: str, jplde: str, timespan: str = "00-40", relative_path: str = None
     ):
@@ -159,6 +159,10 @@ class EphemerisPath:
         return contents
 
 
+# alias to old name of class
+EphemerisPath = BodyEphemerisPath
+
+
 class TimeEphemerisPath:
     def __init__(self, units: str, relative_path: str = None):
         self.units = units
@@ -231,7 +235,7 @@ class TimeEphemerisPath:
         return contents
 
 
-def ephemeris_path(
+def body_ephemeris_path(
     body: str,
     jplde: str = "DE405",
     timespan: str = "00-40",
@@ -239,7 +243,7 @@ def ephemeris_path(
     string: bool = False,
 ) -> str:
     """
-    Function for returning an ephemeris file path.
+    Function for returning a solar system body ephemeris file path.
 
     Parameters
     ----------
@@ -255,11 +259,15 @@ def ephemeris_path(
         If True, return the path as a string rather than a pathlib.Path object.
     """
 
-    path = EphemerisPath(
+    path = BodyEphemerisPath(
         body=body, jplde=jplde, timespan=timespan, relative_path=relative_path
     )
 
     return str(path) if string else path()
+
+
+# alias to old name
+ephemeris_path = body_ephemeris_path
 
 
 def time_ephemeris_path(units: str, relative_path: str = None, string: bool = False):

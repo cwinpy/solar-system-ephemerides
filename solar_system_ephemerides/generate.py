@@ -9,6 +9,7 @@ from astropy.time import Time, TimeDelta
 from astropy import constants as const
 
 from ._version import __version__
+from .ephemeris import BodyEphemeris
 
 try:
     __author__ = os.environ["USER"]
@@ -136,7 +137,7 @@ def cli():
 
     args = parser.parse_args()
 
-    generate_ephemeris(
+    _ = generate_ephemeris(
         body=args.target,
         jplde=args.ephemeris,
         nyears=args.nyears,
@@ -145,6 +146,7 @@ def cli():
         yearstart=args.yearstart,
         output=args.output,
         cli=True,
+        overwrite=True,
     )
 
 
@@ -156,10 +158,12 @@ def generate_ephemeris(
     gpsstart: int = None,
     yearstart: int = None,
     output: str = None,
+    overwrite: bool = False,
     cli: bool = False,
-):
+) -> BodyEphemeris:
     """
-    Generate an ephemeris for a given solar system body.
+    Generate an ephemeris for a given solar system body. Return a BodyEphemeris
+    object.
 
     Parameters
     ----------
@@ -178,8 +182,10 @@ def generate_ephemeris(
         The start time for the ephemeris as a calendar year value.
     output: str
         The path to a file into which to output the ephemeris. If this ends
-        with ".gz" the file will be gzipped. If not given, the ephemeris will
-        be output to stdout. 
+        with ".gz" the file will be gzipped.
+    overwrite: bool
+        If outputting to a file, set whether to overwrite an existing file or
+        not. Default is False.
     """
 
     if jplde is None:
@@ -198,9 +204,7 @@ def generate_ephemeris(
 
     # check that the body is in our current list
     if body.lower() not in BODIES:
-        raise ValueError(
-            f"Target body '{body}' is not in the allowed list: {BODIES}."
-        )
+        raise ValueError(f"Target body '{body}' is not in the allowed list: {BODIES}.")
     else:
         body = (
             body.lower()
@@ -234,8 +238,7 @@ def generate_ephemeris(
     # set the end time
     try:
         endtime = (
-            Time(starttime.decimalyear + nyears, format="decimalyear", scale="utc")
-            + dt
+            Time(starttime.decimalyear + nyears, format="decimalyear", scale="utc") + dt
         )
     except Exception as e:
         ValueError(f"Could not parse total timespan {nyears}: {e}")
@@ -264,59 +267,30 @@ def generate_ephemeris(
 
         curtime += dt
 
-    # set output header
-    headdic = {}
-    headdic["exec"] = os.path.basename(sys.argv[0]) if cli else "N/A"
-    headdic["author"] = __author__
-    headdic["date"] = __date__
-    headdic["version"] = __version__
-    headdic["command"] = " ".join([os.path.basename(sys.argv[0])] + sys.argv[1:]) if cli else "N/A"
-    headdic["ephem"] = jplde.upper()
-    headdic["ephemurl"] = ephemfile
+    # store and return as BodyEphemeris object
+    be = BodyEphemeris()
+    be.pos = [tpos.value for tpos in pos]
+    be.vel = [tvel.value for tvel in vel]
+    be.acc = [tacc.value for tacc in acc]
 
-    outfile = output
-    if outfile is None:
-        fp = sys.stdout
-    else:
-        # gzip if extension ends with '.gz'
-        if outfile[-3:] == ".gz":
-            try:
-                import gzip
+    be.body = body
+    be.t0 = curtime.gps
+    be.timestep = dt.value
+    be.nentries = len(pos)
 
-                fp = gzip.open(outfile, "wb")
-            except IOError:
-                Exception("Problem opening gzip output file '{}'".format(outfile))
-        else:
-            try:
-                fp = open(outfile, "w")
-            except IOError:
-                Exception("Problem opening output file '{}'".format(outfile))
-
-    # write out header
-    fp.write(HEADER.format(**headdic))
-
-    # write out start time (GPS), time interval (secs), number of entries
-    fp.write("{}\t{}\t{}\n".format(int(starttime.gps), dt, len(pos)))
-
-    curtime = starttime
-    for tpos, tvel, tacc in zip(pos, vel, acc):
-        fp.write("{0:.6f}\t".format(curtime.gps))
-        fp.write(
-            "{0:.16e}\t{1:.16e}\t{2:.16e}\t".format(
-                tpos[0].value, tpos[1].value, tpos[2].value
-            )
+    if output is not None:
+        # set output header
+        headdic = {}
+        headdic["exec"] = os.path.basename(sys.argv[0]) if cli else "N/A"
+        headdic["author"] = __author__
+        headdic["date"] = __date__
+        headdic["version"] = __version__
+        headdic["command"] = (
+            " ".join([os.path.basename(sys.argv[0])] + sys.argv[1:]) if cli else "N/A"
         )
-        fp.write(
-            "{0:.16e}\t{1:.16e}\t{2:.16e}\t".format(
-                tvel[0].value, tvel[1].value, tvel[2].value
-            )
-        )
-        fp.write(
-            "{0:.16e}\t{1:.16e}\t{2:.16e}\n".format(
-                tacc[0].value, tacc[1].value, tacc[2].value
-            )
-        )
-        curtime += dt
+        headdic["ephem"] = jplde.upper()
+        headdic["ephemurl"] = ephemfile
 
-    if outfile is not None:
-        fp.close()
+        be.write(output, header=HEADER.format(**headdic), overwrite=overwrite)
+
+    return be
