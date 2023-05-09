@@ -1,8 +1,10 @@
 import numpy as np
 from gzip import open as gzopen
+from typing import Union
 
 from astropy import constants
 from astropy import units as u
+from astropy.table import QTable
 
 from .paths import body_ephemeris_path, time_ephemeris_path
 
@@ -112,12 +114,16 @@ class BodyEphemeris:
 
         sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
         if not si:
-            return self._pos[:, sl] * u.lsec if astropyunits else self._pos[:, sl]
+            return (
+                self._pos[:, sl].squeeze() * u.lsec
+                if astropyunits
+                else self._pos[:, sl].squeeze()
+            )
         else:
             return (
-                self._pos[:, sl] * u.s * constants.c
+                self._pos[:, sl].squeeze() * u.s * constants.c
                 if astropyunits
-                else self._pos[:, sl] * constants.c.value
+                else self._pos[:, sl].squeeze() * constants.c.value
             )
 
     @property
@@ -182,12 +188,16 @@ class BodyEphemeris:
 
         sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
         if not si:
-            return self._vel[:, sl] * u.lsec / u.s if astropyunits else self._vel[:, sl]
+            return (
+                self._vel[:, sl].squeeze() * u.lsec / u.s
+                if astropyunits
+                else self._vel[:, sl].squeeze()
+            )
         else:
             return (
-                self._vel[:, sl] * constants.c
+                self._vel[:, sl].squeeze() * constants.c
                 if astropyunits
-                else self._vel[:, sl] * constants.c.value
+                else self._vel[:, sl].squeeze() * constants.c.value
             )
 
     @property
@@ -253,15 +263,15 @@ class BodyEphemeris:
         sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
         if not si:
             return (
-                self._acc[:, sl] * u.lsec / u.s**2
+                self._acc[:, sl].squeeze() * u.lsec / u.s**2
                 if astropyunits
-                else self._acc[:, sl]
+                else self._acc[:, sl].squeeze()
             )
         else:
             return (
-                self._acc[:, sl] * constants.c / u.s
+                self._acc[:, sl].squeeze() * constants.c / u.s
                 if astropyunits
-                else self._acc[:, sl] * constants.c.value
+                else self._acc[:, sl].squeeze() * constants.c.value
             )
 
     @property
@@ -288,7 +298,7 @@ class BodyEphemeris:
     def times(self):
         try:
             return np.arange(
-                self.t0, self.t0 + self.timestep * self.nentries, self.nentries
+                self.t0, self.t0 + self.timestep * self.nentries, self.timestep
             )
         except AttributeError:
             return None
@@ -329,7 +339,9 @@ class BodyEphemeris:
             _ = self.t0
             _ = self.pos
         except AttributeError:
-            raise RuntimeError("Cannot write ephemeris as it has not been filled in yet.")
+            raise RuntimeError(
+                "Cannot write ephemeris as it has not been filled in yet."
+            )
 
         # write out header
         fp.write(header + ("\n" if not header.endswith("\n") else ""))
@@ -343,15 +355,9 @@ class BodyEphemeris:
         acc = self.acc
         for i in range(len(self)):
             fp.write(f"{times[i]:.6f}\t")
-            fp.write(
-                f"{pos[i, 0]:.16e}\t{pos[i, 1]:.16e}\t{pos[i, 2]:.16e}\t"
-            )
-            fp.write(
-                f"{vel[i, 0]:.16e}\t{vel[i, 1]:.16e}\t{vel[i, 2]:.16e}\t"
-            )
-            fp.write(
-                f"{acc[i, 0]:.16e}\t{acc[i, 1]:.16e}\t{acc[i, 2]:.16e}\n"
-            )
+            fp.write(f"{pos[i, 0]:.16e}\t{pos[i, 1]:.16e}\t{pos[i, 2]:.16e}\t")
+            fp.write(f"{vel[i, 0]:.16e}\t{vel[i, 1]:.16e}\t{vel[i, 2]:.16e}\t")
+            fp.write(f"{acc[i, 0]:.16e}\t{acc[i, 1]:.16e}\t{acc[i, 2]:.16e}\n")
 
         fp.close()
 
@@ -360,6 +366,56 @@ class BodyEphemeris:
             return self.nentries
         except AttributeError:
             return 0
+
+    def to_table(self, si: bool = False, meta: dict = {}) -> QTable:
+        """
+        Convert the information to an :class:`astropy.table.QTable`.
+
+        Parameters
+        ----------
+        si: bool
+            Set whether the table contains values in SI units or
+            values in light seconds.
+        meta: dict
+            Metadata information.
+        """
+
+        meta.update({"body": self.body, "JPL DE": self.jplde})
+
+        names = ["GPS time"]
+        names.extend([f"pos_{c}" for c in ["x", "y", "z"]])
+        names.extend([f"vel_{c}" for c in ["x", "y", "z"]])
+        names.extend([f"acc_{c}" for c in ["x", "y", "z"]])
+
+        data = [self.times]
+        data.extend(
+            [self.get_pos(coords=c, si=si, astropyunits=True) for c in ["x", "y", "z"]]
+        )
+        data.extend(
+            [self.get_vel(coords=c, si=si, astropyunits=True) for c in ["x", "y", "z"]]
+        )
+        data.extend(
+            [self.get_acc(coords=c, si=si, astropyunits=True) for c in ["x", "y", "z"]]
+        )
+
+        return QTable(data, names=names, meta=meta)
+
+    def to_pandas(self, si: bool = False, index: Union[str, bool] = "GPS time"):
+        """
+        Convert the information to a :class:`pandas.DataFrame`.
+
+        Parameters
+        ----------
+        si: bool
+            Set whether the table contains values in SI units or
+            values in light seconds.
+        index: str, bool
+            The column name to use as the index. This defaults to "GPS time".
+            To just have integer indices that can be None. To have no index
+            column, this can be False.
+        """
+
+        return self.to_table(si=si).to_pandas(index=index)
 
 
 def lal_ephemeris_data(jplde: str = "DE405", timespan="00-40"):
