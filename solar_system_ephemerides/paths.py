@@ -61,7 +61,7 @@ class BodyEphemerisPath:
         else:
             for b in BODIES:
                 if body.lower() in BODIES[b]:
-                    self._body = body.lower()
+                    self._body = b.lower()
                     break
             else:
                 raise ValueError(
@@ -148,7 +148,7 @@ class BodyEphemerisPath:
             return str(self.path.relative_to(self.relative_path))
 
     @property
-    def contents(self):
+    def contents(self):  # pragma: no cover
         """
         Return the contents of the file in a string.
         """
@@ -160,7 +160,7 @@ class BodyEphemerisPath:
 
 
 # alias to old name of class
-EphemerisPath = BodyEphemerisPath
+EphemerisPath = BodyEphemerisPath  # pragma: no cover
 
 
 class TimeEphemerisPath:
@@ -267,7 +267,7 @@ def body_ephemeris_path(
 
 
 # alias to old name
-ephemeris_path = body_ephemeris_path
+ephemeris_path = body_ephemeris_path  # pragma: no cover
 
 
 def time_ephemeris_path(units: str, relative_path: str = None, string: bool = False):
@@ -289,7 +289,7 @@ def time_ephemeris_path(units: str, relative_path: str = None, string: bool = Fa
     return str(path) if string else path()
 
 
-def cli():
+def cli():  # pragma: no cover
     """
     Entry point for command line interface for returning paths.
     """

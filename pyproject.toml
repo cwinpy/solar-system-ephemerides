@@ -30,6 +30,16 @@ dynamic = [
 create_solar_system_ephemeris = "solar_system_ephemerides.generate:cli"
 ephemeris_path = "solar_system_ephemerides.paths:cli"
 
+[project.optional-dependencies]
+# test suite
+test = [
+    "codecov",
+    "coverage",
+    "coverage-badge",
+    "pytest >= 4.6",
+    "pytest-coverage",
+]
+
 [tool.setuptools]
 license-files = [ "LICENSE" ]
 include-package-data = true
