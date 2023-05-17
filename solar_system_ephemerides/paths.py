@@ -1,4 +1,4 @@
-import gzip
+import os
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -139,24 +139,13 @@ class BodyEphemerisPath:
         if self.relative_path is None:
             return self.path
         else:
-            return self.path.relative_to(self.relative_path)
+            return Path(os.path.relpath(self.path, self.relative_path))
 
     def __str__(self):
         if self.relative_path is None:
             return str(self.path)
         else:
-            return str(self.path.relative_to(self.relative_path))
-
-    @property
-    def contents(self):  # pragma: no cover
-        """
-        Return the contents of the file in a string.
-        """
-
-        with gzip.open(self.path, "r") as fp:
-            contents = fp.read()
-
-        return contents
+            return os.path.relpath(self.path, self.relative_path)
 
 
 # alias to old name of class
@@ -215,24 +204,13 @@ class TimeEphemerisPath:
         if self.relative_path is None:
             return self.path
         else:
-            return self.path.relative_to(self.relative_path)
+            return os.path.relpath(self.path, self.relative_path)
 
     def __str__(self):
         if self.relative_path is None:
             return str(self.path)
         else:
-            return str(self.path.relative_to(self.relative_path))
-
-    @property
-    def contents(self):
-        """
-        Return the contents of the file in a string.
-        """
-
-        with gzip.open(self.path, "r") as fp:
-            contents = fp.read()
-
-        return contents
+            return str(os.path.relpath(self.path, self.relative_path))
 
 
 def body_ephemeris_path(

@@ -2,7 +2,13 @@ import pytest
 
 from pathlib import Path
 
-from solar_system_ephemerides.paths import body_ephemeris_path, time_ephemeris_path
+from solar_system_ephemerides.paths import (
+    body_ephemeris_path,
+    time_ephemeris_path,
+    BODIES,
+    JPLDE,
+    TIMESPANS,
+)
 
 
 class TestBodyEphemerisPath:
@@ -72,3 +78,46 @@ class TestBodyEphemerisPath:
 
         assert strout == str(pathout)
         assert pathout.is_file()
+
+    def test_timespans_setter(self):
+        """
+        Test setting the ephemeris timespan.
+        """
+
+        with pytest.raises(TypeError):
+            body_ephemeris_path("earth", timespan=1)
+
+        with pytest.raises(ValueError):
+            body_ephemeris_path("earth", timespan="kgsdg")
+
+        # test equivalent inputs
+        b1 = body_ephemeris_path("earth", timespan="00-40", string=True)
+        b2 = body_ephemeris_path("terra", timespan=(2000, 2040), string=True)
+        b3 = body_ephemeris_path("ziemia", timespan=["00", 40], string=True)
+
+        assert b1 == b2 and b1 == b3
+
+    def test_relative_path_setter(self):
+        """
+        Test setting relative path.
+        """
+
+        with pytest.raises(ValueError):
+            body_ephemeris_path("sol", relative_path="blah.txt")
+
+        path = Path(__file__).parent
+        b = body_ephemeris_path("sol", relative_path=path)
+        assert (path / b).is_file()
+
+    def test_all_exist(self):
+        """
+        Check that all the JPL ephemeris versions for all bodies for all
+        timespans are actually present.
+        """
+
+        for jplde in JPLDE:
+            for body in BODIES:
+                for timespan in TIMESPANS:
+                    b = body_ephemeris_path(body, jplde=jplde, timespan=timespan)
+
+                    assert b.is_file()
