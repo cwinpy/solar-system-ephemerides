@@ -121,3 +121,59 @@ class TestBodyEphemerisPath:
                     b = body_ephemeris_path(body, jplde=jplde, timespan=timespan)
 
                     assert b.is_file()
+
+
+class TestTimeEphemerisPath:
+    """
+    Test the time_ephemeris_path function (which uses the TimeEphemerisPath class).
+    """
+
+    def test_no_arguments(self):
+        """
+        Test that time_ephemeris_path returns a TypeError with no arguments given.
+        """
+
+        with pytest.raises(TypeError):
+            time_ephemeris_path()
+
+    def test_units_setter(self):
+        """
+        Test setting of the units.
+        """
+
+        with pytest.raises(TypeError):
+            time_ephemeris_path(87552.285)
+
+        with pytest.raises(ValueError):
+            time_ephemeris_path("THB")
+
+        t1 = time_ephemeris_path("tcb", string=True)
+        t2 = time_ephemeris_path("TCB", string=True)
+
+        assert t1 == t2
+
+    def test_str_versus_path(self):
+        """
+        Check that function returns a string or a Path as expected.
+        """
+
+        strout = time_ephemeris_path("tdb", string=True)
+        pathout = time_ephemeris_path("TDB")
+
+        assert isinstance(strout, str)
+        assert isinstance(pathout, Path)
+
+        assert strout == str(pathout)
+        assert pathout.is_file()
+
+    def test_relative_path_setter(self):
+        """
+        Test setting relative path.
+        """
+
+        with pytest.raises(ValueError):
+            time_ephemeris_path("TDB", relative_path="blah.txt")
+
+        path = Path(__file__).parent
+        t = time_ephemeris_path("tdb", relative_path=path)
+        assert (path / t).is_file()

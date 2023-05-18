@@ -36,6 +36,7 @@ test = [
     "codecov",
     "coverage",
     "coverage-badge",
+    "lalsuite",
     "pytest >= 4.6",
     "pytest-coverage",
 ]

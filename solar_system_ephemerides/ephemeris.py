@@ -19,33 +19,61 @@ def decode(x):
 
 
 class BodyEphemeris:
-    def __init__(self, body=None, jplde=None, timespan=None):
+    def __init__(
+        self,
+        body: str = None,
+        jplde: str = None,
+        timespan: str = None,
+        path: Union[str, Path] = None,
+    ):
+        """
+        Read in and store an existing ephemeris for a solar system body.
+
+        Parameters
+        ----------
+        body: str
+            The solar system body for which to read in the ephemeris.
+        jplde: str
+            The JPL development ephemeris version for which to read in the
+            ephemeris.
+        timespan: str
+            The timespan for the ephemeris to read in.
+        path: str
+            Rather than passing the above parameters and finding the associated
+            ephemeris, you can directly enter the path the ephemeris file.
+        """
+
         self.body = body
         self.jplde = jplde
         self.timespan = timespan
 
         # try getting ephemeris from a file
-        self.get_ephemeris()
+        self.get_ephemeris(path=path)
 
-    def get_ephemeris(self, body=None, jplde=None, timespan=None):
-        if body is not None:
+    def get_ephemeris(self, body=None, jplde=None, timespan=None, path=None):
+        if body is not None and path is None:
             # set body to given body
             self.body = body
 
-        if jplde is not None:
+        if jplde is not None and path is None:
             self.jplde = jplde
 
-        try:
-            ts = (
-                timespan
-                if timespan is not None
-                else (self.timespan if self.timespan is not None else "00-40")
-            )
-            path = body_ephemeris_path(body=self.body, jplde=self.jplde, timespan=ts)
-            self.timespan = ts
-        except (ValueError, TypeError):
-            # exit without creating an ephemeris
-            return None
+        if path is None:
+            try:
+                ts = (
+                    timespan
+                    if timespan is not None
+                    else (self.timespan if self.timespan is not None else "00-40")
+                )
+                path = body_ephemeris_path(
+                    body=self.body, jplde=self.jplde, timespan=ts
+                )
+                self.timespan = ts
+            except (ValueError, TypeError):
+                # exit without creating an ephemeris
+                return None
+        elif not Path(path).is_file():
+            raise ValueError(f"The supplied path '{path}' does not exist.")
 
         # read in file
         try:
@@ -113,7 +141,7 @@ class BodyEphemeris:
         if not (set("xyz") & set(coords)):
             raise ValueError("Coordinates must contain 'x', 'y', and/or 'z'")
 
-        sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
+        sl = np.r_[[xyz[v] for v in sorted(set(coords)) if v in xyz]]
         if not si:
             return (
                 self._pos[:, sl].squeeze() * u.lsec
@@ -187,7 +215,7 @@ class BodyEphemeris:
         if not (set("xyz") & set(coords)):
             raise ValueError("Coordinates must contain 'x', 'y', and/or 'z'")
 
-        sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
+        sl = np.r_[[xyz[v] for v in sorted(set(coords)) if v in xyz]]
         if not si:
             return (
                 self._vel[:, sl].squeeze() * u.lsec / u.s
@@ -261,7 +289,7 @@ class BodyEphemeris:
         if not (set("xyz") & set(coords)):
             raise ValueError("Coordinates must contain 'x', 'y', and/or 'z'")
 
-        sl = np.r_[[xyz[v] for v in set(coords) if v in xyz]]
+        sl = np.r_[[xyz[v] for v in sorted(set(coords)) if v in xyz]]
         if not si:
             return (
                 self._acc[:, sl].squeeze() * u.lsec / u.s**2
@@ -304,7 +332,9 @@ class BodyEphemeris:
         except AttributeError:
             return None
 
-    def write(self, outfile: Union[str, Path], header: str = None, overwrite: bool = False):
+    def write(
+        self, outfile: Union[str, Path], header: str = None, overwrite: bool = False
+    ):
         """
         Write the ephemeris out to a file. If the file extension is ".txt" or
         ".dat" this will be output to a plain ascii file. If it ends with ".gz"
@@ -327,7 +357,9 @@ class BodyEphemeris:
             raise NotImplementedError("Output to HDF5 files is not yet implemented.")
 
         if outfile.is_file() and not overwrite:
-            print(f"File '{outfile}' already exists. Set 'overwrite=True' to overwrite it.")
+            print(
+                f"File '{outfile}' already exists. Set 'overwrite=True' to overwrite it."
+            )
             return
 
         # gzip if extension ends with '.gz'
