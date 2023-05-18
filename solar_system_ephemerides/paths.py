@@ -1,4 +1,4 @@
-import gzip
+import os
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -61,7 +61,7 @@ class BodyEphemerisPath:
         else:
             for b in BODIES:
                 if body.lower() in BODIES[b]:
-                    self._body = body.lower()
+                    self._body = b.lower()
                     break
             else:
                 raise ValueError(
@@ -139,28 +139,17 @@ class BodyEphemerisPath:
         if self.relative_path is None:
             return self.path
         else:
-            return self.path.relative_to(self.relative_path)
+            return Path(os.path.relpath(self.path, self.relative_path))
 
     def __str__(self):
         if self.relative_path is None:
             return str(self.path)
         else:
-            return str(self.path.relative_to(self.relative_path))
-
-    @property
-    def contents(self):
-        """
-        Return the contents of the file in a string.
-        """
-
-        with gzip.open(self.path, "r") as fp:
-            contents = fp.read()
-
-        return contents
+            return os.path.relpath(self.path, self.relative_path)
 
 
 # alias to old name of class
-EphemerisPath = BodyEphemerisPath
+EphemerisPath = BodyEphemerisPath  # pragma: no cover
 
 
 class TimeEphemerisPath:
@@ -215,24 +204,13 @@ class TimeEphemerisPath:
         if self.relative_path is None:
             return self.path
         else:
-            return self.path.relative_to(self.relative_path)
+            return os.path.relpath(self.path, self.relative_path)
 
     def __str__(self):
         if self.relative_path is None:
             return str(self.path)
         else:
-            return str(self.path.relative_to(self.relative_path))
-
-    @property
-    def contents(self):
-        """
-        Return the contents of the file in a string.
-        """
-
-        with gzip.open(self.path, "r") as fp:
-            contents = fp.read()
-
-        return contents
+            return str(os.path.relpath(self.path, self.relative_path))
 
 
 def body_ephemeris_path(
@@ -267,7 +245,7 @@ def body_ephemeris_path(
 
 
 # alias to old name
-ephemeris_path = body_ephemeris_path
+ephemeris_path = body_ephemeris_path  # pragma: no cover
 
 
 def time_ephemeris_path(units: str, relative_path: str = None, string: bool = False):
@@ -289,7 +267,7 @@ def time_ephemeris_path(units: str, relative_path: str = None, string: bool = Fa
     return str(path) if string else path()
 
 
-def cli():
+def cli():  # pragma: no cover
     """
     Entry point for command line interface for returning paths.
     """

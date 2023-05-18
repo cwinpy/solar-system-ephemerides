@@ -78,7 +78,7 @@ BODIES = [
 ]
 
 
-def cli():
+def cli():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-e",
@@ -194,7 +194,7 @@ def generate_ephemeris(
         raise ValueError("JPL development version must be given.")
 
     # check ephemeris is either a filename, or in our current list
-    if jplde.endswith(".bsp"):
+    if jplde.endswith(".bsp"):  # pragma: no cover
         ephemfile = jplde
     else:
         if jplde.upper() not in EPH_URLS.keys():
@@ -224,18 +224,18 @@ def generate_ephemeris(
         try:
             starttime = Time(gpsstart, format="gps", scale="utc")
         except Exception as e:
-            ValueError(f"Could not parse start GPS time {gpsstart}: {e}")
+            raise ValueError(f"Could not parse start GPS time {gpsstart}: {e}")
     else:
         try:
             starttime = Time(yearstart, format="decimalyear", scale="utc")
         except Exception as e:
-            ValueError(f"Could not parse start year {yearstart}: {e}")
+            raise ValueError(f"Could not parse start year {yearstart}: {e}")
 
     # set the time step
     try:
         dt = TimeDelta(interval * 3600.0, format="sec")
     except Exception as e:
-        ValueError(f"Could not parse time interval {interval}: {e}")
+        raise ValueError(f"Could not parse time interval {interval}: {e}")
 
     # set the end time
     try:
@@ -243,7 +243,7 @@ def generate_ephemeris(
             Time(starttime.decimalyear + nyears, format="decimalyear", scale="utc") + dt
         )
     except Exception as e:
-        ValueError(f"Could not parse total timespan {nyears}: {e}")
+        raise ValueError(f"Could not parse total timespan {nyears}: {e}")
 
     pos = []
     vel = []
@@ -251,7 +251,7 @@ def generate_ephemeris(
 
     # get positions, velocities and accelerations
     curtime = starttime
-    while curtime <= endtime:
+    while curtime < endtime:
         tpos, tvel = get_body_barycentric_posvel(body, curtime)
 
         # convert positions to light seconds
@@ -276,7 +276,7 @@ def generate_ephemeris(
     be.acc = [tacc.value for tacc in acc]
 
     be.body = body
-    be.t0 = curtime.gps
+    be.t0 = starttime.gps
     be.timestep = dt.value
     be.nentries = len(pos)
 
