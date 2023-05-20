@@ -1,7 +1,7 @@
 # Solar System ephemerides
 
-A package holding solar system ephemeris files, storing positions, velocities and accelerations of
-the Earth and Sun for a range of [JPL development
+A package holding solar system ephemeris files, storing positions (in light seconds), velocities
+(lts/s) and accelerations (lts/s<sup>2</sup>) of the Earth and Sun for a range of [JPL development
 ephemeris](https://en.wikipedia.org/wiki/Jet_Propulsion_Laboratory_Development_Ephemeris) versions.
 These can be used, for example, for calculating Doppler modulations and relativistic corrections for
 continuous gravitational-wave signals. The package contains a command line script and Python API for
@@ -141,6 +141,59 @@ optional arguments:
   -t TARGET, --target TARGET, --body TARGET
                         Set the solar system body to generate the ephemeris
                         for
+```
+
+### Ephemeris access within Python
+
+A convenience class for reading and manipulating the ephemeris file information within Python is
+provided with the `BodyEphemeris` class. This has attributes that return the positions, velocities
+and accelerations (with the distance in light seconds as stored in the files, or output in SI
+units). It can also convert the ephemeris into an Astropy
+[`QTable`](https://docs.astropy.org/en/stable/api/astropy.table.QTable.html#astropy.table.QTable) or
+Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).
+
+```python
+from solar_system_ephemerides.ephemeris import BodyEphemeris
+
+# load the DE405 ephemeris for the Earth
+earth = BodyEphemeris(body="earth", jplde="DE405")
+
+# return a NumPy array of the 3D cartesian positions of Earth (in light seconds)
+# for all time steps. Equivalently use .vel and .acc for velocities and
+# accelerations. To return, e.g., just the x-positions use .pos_x.
+earth.pos
+
+# return the positions (in SI units)
+earth.pos_si
+
+# return the GPS seconds time stamp for each ephemeris valie
+earth.times
+
+# return the ephemeris as an Astropy QTable
+earth.to_table()
+
+# return the ephemeris as a Pandas DataFrame
+earth.to_pandas()
+```
+
+To get the Earth and Sun ephemerides within a SWIG LALSuite `EphemerisData` object, you can use the
+`lal_ephemeris_data` function, e.g.,:
+
+```python
+from solar_system_ephemerides.ephemeris import lal_ephemeris_data
+
+# get Sun and Earth ephemerides for DE421
+edat = lal_ephemeris_data(jplde="DE421")
+```
+
+Equivalently, to get the time correction file information within a SWIG LALSuite
+`TimeCorrectionData` object, you can use the `lal_time_ephemeris_data` function, e.g.,:
+
+```python
+from solar_system_ephemerides.ephemeris import lal_time_ephemeris_data
+
+# get the TT to TDB time correction data
+tdat = lal_time_ephemeris_data(units="TDB")
 ```
 
 [![PyPI version](https://badge.fury.io/py/solar_system_ephemerides.svg)](https://badge.fury.io/py/solar_system_ephemerides) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/solar_system_ephemerides.svg)](https://anaconda.org/conda-forge/solar_system_ephemerides)
