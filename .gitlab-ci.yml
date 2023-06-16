@@ -30,9 +30,6 @@ python-3.10:
 deploy_release:
   stage: release
   image: python
-  variables:
-    TWINE_USERNAME: "${PYPI_USERNAME}"
-    TWINE_PASSWORD: "${PYPI_PASSWORD}"
   before_script:
     - python -m pip install build setuptools_scm[toml] twine
   script:
