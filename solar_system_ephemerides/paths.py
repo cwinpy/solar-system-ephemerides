@@ -204,7 +204,7 @@ class TimeEphemerisPath:
         if self.relative_path is None:
             return self.path
         else:
-            return os.path.relpath(self.path, self.relative_path)
+            return Path(os.path.relpath(self.path, self.relative_path))
 
     def __str__(self):
         if self.relative_path is None:
