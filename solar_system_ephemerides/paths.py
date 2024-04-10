@@ -24,6 +24,7 @@ JPLDE = [
     "DE430",
     "DE435",
     "DE436",
+    "DE440",
 ]
 
 # list of valid timespans for ephemerides
