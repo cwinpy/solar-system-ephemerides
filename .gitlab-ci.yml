@@ -34,6 +34,6 @@ deploy_release:
     - python -m pip install build setuptools_scm[toml] twine
   script:
     - python -m build --sdist --wheel --outdir dist/ .
-    - python -m twine upload dist/*
+    - python -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/* -u __token__ -p ${PYPI_TOKEN}
   only:
     - tags
