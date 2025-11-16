@@ -42,9 +42,10 @@ test = [
 ]
 
 [tool.setuptools]
-license-files = [ "LICENSE" ]
 include-package-data = true
 
-[tool.setuptools_scm]
-write_to = "solar_system_ephemerides/_version.py"
+[tool.setuptools.package-dir]
+solar_system_ephemerides = "src"
 
+[tool.setuptools_scm]
+write_to = "src/_version.py"
