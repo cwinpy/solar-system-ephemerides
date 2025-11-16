@@ -26,6 +26,22 @@ python-3.10:
     - python -m pip install .
     - pytest
 
+# test on Python 3.11
+python-3.11:
+  stage: test
+  image: containers.ligo.org/cwinpy/cwinpy-containers/cwinpyci-python311
+  script:
+    - python -m pip install .
+    - pytest
+
+  # test on Python 3.12
+python-3.12:
+  stage: test
+  image: containers.ligo.org/cwinpy/cwinpy-containers/cwinpyci-python312
+  script:
+    - python -m pip install .
+    - pytest
+
 # for new tags create a release and upload to PyPI
 deploy_release:
   stage: release
