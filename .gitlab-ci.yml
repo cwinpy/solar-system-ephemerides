@@ -2,14 +2,6 @@ stages:
   - test
   - release
 
-# test on Python 3.8
-python-3.8:
-  stage: test
-  image: containers.ligo.org/cwinpy/cwinpy-containers/cwinpyci-python38
-  script:
-    - python -m pip install .
-    - pytest
-
 # test on Python 3.9
 python-3.9:
   stage: test
@@ -22,6 +14,22 @@ python-3.9:
 python-3.10:
   stage: test
   image: containers.ligo.org/cwinpy/cwinpy-containers/cwinpyci-python310
+  script:
+    - python -m pip install .
+    - pytest
+
+# test on Python 3.11
+python-3.11:
+  stage: test
+  image: containers.ligo.org/cwinpy/cwinpy-containers/cwinpyci-python311
+  script:
+    - python -m pip install .
+    - pytest
+
+  # test on Python 3.12
+python-3.12:
+  stage: test
+  image: containers.ligo.org/cwinpy/cwinpy-containers/cwinpyci-python312
   script:
     - python -m pip install .
     - pytest

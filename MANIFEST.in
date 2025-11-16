@@ -1,3 +1,4 @@
-include solar_system_ephemerides/ephemerides/earth/*.dat.gz
-include solar_system_ephemerides/ephemerides/sun/*.dat.gz
-include solar_system_ephemerides/ephemerides/time/*.dat.gz
+include LICENSE
+include src/ephemerides/earth/*.dat.gz
+include src/ephemerides/sun/*.dat.gz
+include src/ephemerides/time/*.dat.gz

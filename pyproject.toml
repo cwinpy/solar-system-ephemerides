@@ -14,7 +14,7 @@ authors = [
 ]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.6, <4"
+requires-python = ">=3.9, <4"
 dependencies = [
     "astropy",
     "jplephem",
@@ -42,9 +42,10 @@ test = [
 ]
 
 [tool.setuptools]
-license-files = [ "LICENSE" ]
 include-package-data = true
 
-[tool.setuptools_scm]
-write_to = "solar_system_ephemerides/_version.py"
+[tool.setuptools.package-dir]
+solar_system_ephemerides = "src"
 
+[tool.setuptools_scm]
+write_to = "src/_version.py"
