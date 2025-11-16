@@ -3,11 +3,11 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-import pkg_resources
+import importlib.resources
 
 
-EPHEMERIS_BASE_PATH = pkg_resources.resource_filename(
-    "solar_system_ephemerides", "ephemerides/"
+EPHEMERIS_BASE_PATH = importlib.resources.files(
+    "solar_system_ephemerides.ephemerides"
 )
 
 # dictionary of current bodies stored within the package (with aliases)
