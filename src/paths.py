@@ -6,9 +6,7 @@ from pathlib import Path
 import importlib.resources
 
 
-EPHEMERIS_BASE_PATH = importlib.resources.files(
-    "solar_system_ephemerides.ephemerides"
-)
+EPHEMERIS_BASE_PATH = importlib.resources.files("solar_system_ephemerides.ephemerides")
 
 # dictionary of current bodies stored within the package (with aliases)
 BODIES = {
